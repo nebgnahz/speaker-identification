@@ -1,3 +1,6 @@
+# Ignore the final binary
+mfcc
+
 # Compiled Object files
 *.slo
 *.lo
