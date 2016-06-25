@@ -39,8 +39,9 @@ MFCC::MFCC(uint32_t sampleRate, uint32_t FFTSize,
            uint32_t numFilterbankChannel,
            uint32_t numCepstralCoeff,
            uint32_t lifterParam)
-        : initialized_(false), num_lower_features_(numCepstralCoeff) {
-
+        : initialized_(false),
+          num_cc_(numCepstralCoeff),
+          lifter_param_(lifterParam) {
     vector<double> freqs(numFilterbankChannel + 2);
     double mel_start = TriFilterBank::toMelScale(startFreq);
     double mel_end = TriFilterBank::toMelScale(endFreq);

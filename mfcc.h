@@ -45,11 +45,8 @@ class MFCC {
 
   protected:
     bool initialized_;
-    uint32_t num_lower_features_;
     uint32_t num_cc_;
     uint32_t lifter_param_;
-
-    bool with_delta_;
 
     vector<TriFilterBank> filters_;
 };
