@@ -7,7 +7,10 @@
 #include <vector>
 
 using std::vector;
+
+#ifndef PI
 #define PI 3.1415926535
+#endif
 
 class TriFilterBank {
   public:
@@ -44,7 +47,6 @@ class MFCC {
     vector<double> lifterCC(const vector<double>& cc);
 
   protected:
-    bool initialized_;
     uint32_t num_cc_;
     uint32_t lifter_param_;
 
