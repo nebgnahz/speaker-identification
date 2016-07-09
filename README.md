@@ -1,9 +1,8 @@
 # Speaker Recognition
 
+MFCC + GMM
 
-
-## mfcc.cc
-MFCC implemented in C++
+For an educational MFCC implementation, please check out the [mfcc branch](https://github.com/nebgnahz/speaker-identification/tree/mfcc).
 
 # References during my research
 
