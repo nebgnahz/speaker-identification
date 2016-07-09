@@ -18,7 +18,12 @@ WavReader::WavReader(const std::string name) {
     assert(num == frames_);
 
     // TODO(benzh) For now we only support one-channel audio data.
-    assert(num_channels_ == 1);
+    if (num_channels_ != 1) {
+        fprintf(stderr, "Channel is %d for %s\n", num_channels_, name.c_str());
+        assert(false);
+    }
+
+
 
     data_.clear();
     data_.insert(data_.end(), &ptr[0], &ptr[num - 1]);

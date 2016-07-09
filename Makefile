@@ -3,7 +3,7 @@ all: speaker-recognition mfcc-test
 CFLAGS=-I. -std=c++11
 LIBSNDFILE=`pkg-config --cflags --libs sndfile`
 
-mfcc.o: mfcc.cc
+mfcc.o: mfcc.cpp
 	$(CXX) -c $< -o $@ $(CFLAGS)
 
 mfcc-test: mfcc.o mfcc-test.cc

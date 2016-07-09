@@ -1,16 +1,13 @@
-#ifndef MFCC_H_
-#define MFCC_H_
+#ifndef ESP_MFCC_H_
+#define ESP_MFCC_H_
+
+#include "GRT/CoreModules/FeatureExtraction.h"
 
 #include <stdint.h>
 #include <math.h>
-
 #include <vector>
 
-using std::vector;
-
-#ifndef PI
-#define PI 3.1415926535
-#endif
+namespace GRT {
 
 class TriFilterBank {
   public:
@@ -32,25 +29,46 @@ class TriFilterBank {
     vector<double> filter_;
 };
 
-class MFCC {
+class MFCC : public FeatureExtraction {
   public:
-    MFCC(uint32_t sampleRate, uint32_t FFTSize,
-         double startFreq, double endFreq,
-         uint32_t numFilterbankChannel,
-         uint32_t numCepstralCoeff,
-         uint32_t lifterParam);
+    MFCC(uint32_t sampleRate = -1, uint32_t FFTSize = -1,
+         double startFreq = -1, double endFreq = -1,
+         uint32_t numFilterbankChannel = -1,
+         uint32_t numCepstralCoeff = -1,
+         uint32_t lifterParam = -1);
 
-    inline vector<TriFilterBank> getFilters() const { return filters_; }
+    MFCC(const MFCC &rhs);
+    MFCC& operator=(const MFCC &rhs);
+    bool deepCopyFrom(const FeatureExtraction *featureExtraction) override;
+    ~MFCC() {}
 
+    virtual bool computeFeatures(const VectorDouble &inputVector) override;
+    virtual bool reset() override;
+
+    using MLBase::train;
+    using MLBase::train_;
+    using MLBase::predict;
+    using MLBase::predict_;
+
+    vector<TriFilterBank> getFilters() const {
+        return filters_;
+    }
+
+  public:
     vector<double> getLFBE(const vector<double>& fft);
     vector<double> getCC(const vector<double>& lfbe);
     vector<double> lifterCC(const vector<double>& cc);
 
   protected:
+    bool initialized_;
     uint32_t num_cc_;
     uint32_t lifter_param_;
 
     vector<TriFilterBank> filters_;
+
+    static RegisterFeatureExtractionModule<MFCC> registerModule;
 };
 
-#endif  // MFCC_H_
+}  // namespace GRT
+
+#endif  // ESP_MFCC_H_
