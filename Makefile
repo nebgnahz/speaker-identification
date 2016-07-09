@@ -19,6 +19,6 @@ test: mfcc-test
 	@./mfcc-test test
 
 clean:
-	$(RM) mfcc-test speaker-recognition
+	$(RM) mfcc-test speaker-recognition *.o
 
 .PHONY: clean test
