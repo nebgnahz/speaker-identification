@@ -1,17 +1,24 @@
-all: mfcc
+all: speaker-recognition mfcc-test
 
 CFLAGS=-I. -std=c++11
+LIBSNDFILE=`pkg-config --cflags --libs sndfile`
 
-mfcc.o: mfcc.cc
+mfcc.o: mfcc.cpp
 	$(CXX) -c $< -o $@ $(CFLAGS)
 
-mfcc: mfcc.o main.cc
+mfcc-test: mfcc.o mfcc-test.cc
 	$(CXX) $^ -o $@ -lgrt $(CFLAGS)
 
-test: mfcc
-	@./mfcc test
+wav-reader.o: wav-reader.cpp
+	$(CXX) -c $< -o $@ $(CFLAGS)
+
+speaker-recognition: mfcc.o wav-reader.o speaker-recognition.cpp
+	$(CXX) $^ -o $@ -lgrt $(CFLAGS) $(LIBSNDFILE)
+
+test: mfcc-test
+	@./mfcc-test test
 
 clean:
-	$(RM) mfcc
+	$(RM) mfcc-test speaker-recognition *.o
 
 .PHONY: clean test

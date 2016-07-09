@@ -1,7 +1,11 @@
-#include "mfcc.h"
+#include "MFCC.h"
 
-#include <assert.h>
-#include <stdint.h>
+#include <cmath>
+
+namespace GRT {
+
+RegisterFeatureExtractionModule<MFCC>
+MFCC::registerModule("MFCC");
 
 TriFilterBank::TriFilterBank(double left, double middle, double right, uint32_t fs, uint32_t size) {
     filter_.resize(size);
@@ -34,6 +38,7 @@ double TriFilterBank::filter(vector<double> input) {
     return sum;
 }
 
+
 MFCC::MFCC(uint32_t sampleRate, uint32_t FFTSize,
            double startFreq, double endFreq,
            uint32_t numFilterbankChannel,
@@ -42,6 +47,21 @@ MFCC::MFCC(uint32_t sampleRate, uint32_t FFTSize,
         : initialized_(false),
           num_cc_(numCepstralCoeff),
           lifter_param_(lifterParam) {
+    classType = "MFCC";
+    featureExtractionType = classType;
+    debugLog.setProceedingText("[INFO MFCC]");
+    debugLog.setProceedingText("[DEBUG MFCC]");
+    errorLog.setProceedingText("[ERROR MFCC]");
+    warningLog.setProceedingText("[WARNING MFCC]");
+
+    if (sampleRate <= 0 || FFTSize <= 0 || startFreq <= 0 || endFreq <= 0 ||
+        numFilterbankChannel <= 0 || numCepstralCoeff <= 0 || lifterParam <= 0) {
+        return;
+    }
+
+    numInputDimensions = FFTSize;
+    numOutputDimensions = numCepstralCoeff;
+
     vector<double> freqs(numFilterbankChannel + 2);
     double mel_start = TriFilterBank::toMelScale(startFreq);
     double mel_end = TriFilterBank::toMelScale(endFreq);
@@ -58,6 +78,49 @@ MFCC::MFCC(uint32_t sampleRate, uint32_t FFTSize,
                                          sampleRate,
                                          FFTSize));
     }
+
+    initialized_ = true;
+}
+
+MFCC::MFCC(const MFCC &rhs) {
+    classType = rhs.getClassType();
+    featureExtractionType = classType;
+    debugLog.setProceedingText("[DEBUG MFCC]");
+    errorLog.setProceedingText("[ERROR MFCC]");
+    warningLog.setProceedingText("[WARNING MFCC]");
+
+    this->filters_.clear();
+    this->num_cc_ = rhs.num_cc_;
+    this->lifter_param_ = rhs.lifter_param_;
+    *this = rhs;
+}
+
+MFCC& MFCC::operator=(const MFCC &rhs) {
+    if (this != &rhs) {
+        this->classType = rhs.getClassType();
+        this->filters_ = rhs.getFilters();
+        this->num_cc_ = rhs.num_cc_;
+        this->lifter_param_ = rhs.lifter_param_;
+        this->filters_ = rhs.getFilters();
+        copyBaseVariables( (FeatureExtraction*)&rhs );
+    }
+    return *this;
+}
+
+bool MFCC::deepCopyFrom(const FeatureExtraction *featureExtraction) {
+    if (featureExtraction == NULL) return false;
+    if (this->getFeatureExtractionType() ==
+        featureExtraction->getFeatureExtractionType() ){
+        // Invoke the equals operator to copy the data from the rhs instance to
+        // this instance
+        *this = *(MFCC*)featureExtraction;
+        return true;
+    }
+
+    errorLog << "clone(MFCC *featureExtraction)"
+             << "-  FeatureExtraction Types Do Not Match!"
+             << endl;
+    return false;
 }
 
 vector<double> MFCC::getLFBE(const vector<double>& fft) {
@@ -95,3 +158,21 @@ vector<double> MFCC::lifterCC(const vector<double>& cc) {
     }
     return liftered;
 }
+
+bool MFCC::computeFeatures(const VectorDouble &inputVector) {
+    // We assume the input is from a DFT (FFT) transformation.
+    VectorDouble lfbe = getLFBE(inputVector);
+    VectorDouble cc = getCC(lfbe);
+    VectorDouble liftered = lifterCC(cc);
+    featureVector = liftered;
+
+    featureDataReady = true;
+    return true;
+}
+
+bool MFCC::reset() {
+    if (initialized_) { filters_.clear(); }
+    return true;
+}
+
+}  // namespace GRT

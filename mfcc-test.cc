@@ -39,6 +39,8 @@ using std::vector;
 vector<string> split(string str, char delimiter);
 GRT::MatrixDouble readCSVToMatrix(const string&, uint32_t, uint32_t);
 
+using GRT::MFCC;
+
 int main(int argc, const char* argv[]) {
     if (argc != 2) {
         std::cerr << "USAGE: " << std::endl;

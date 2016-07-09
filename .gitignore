@@ -30,3 +30,6 @@ mfcc
 *.exe
 *.out
 *.app
+
+## Ignore data directory for now
+data
