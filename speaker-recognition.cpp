@@ -55,14 +55,9 @@ int main(int argc, char* argv[]) {
     pipeline.setClassifier(gmm);
 
     GRT::TimeSeriesClassificationData data(1);
-    load_audio_file_from_directory(data, kFemaleDatasetDir, 1, 3);
-    load_audio_file_from_directory(data, kMaleDatasetDir, 2, 3);
+    load_audio_file_from_directory(data, kFemaleDatasetDir, 1, 30);
+    load_audio_file_from_directory(data, kMaleDatasetDir, 2, 30);
     std::cout << data.getStatsAsString() << std::endl;
 
     pipeline.train(data);
-    // WavReader reader(argv[1]);
-    // for (const auto& d : reader.getData()) {
-    //     fft.update(d);
-    // }
-    // fft.getFeatureVector();
 }
