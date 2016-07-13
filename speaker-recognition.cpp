@@ -51,7 +51,17 @@ int main(int argc, char* argv[]) {
 
     // Sample rate is 16k, FFT window size 512 => 32 ms, hopsize 128 => 8 ms
     GRT::FFT fft(512, 128, 1,  GRT::FFT::HAMMING_WINDOW, true, false);
-    GRT::MFCC mfcc(16000, 512 / 2, 300, 8000, 26, 5, 22);
+
+    GRT::MFCC::Options options;
+    options.sample_rate = 16000;
+    options.fft_size = 512 / 2;
+    options.start_freq = 300;
+    options.end_freq = 8000;
+    options.num_tri_filter = 26;
+    options.num_cepstral_coeff = 5;
+    options.lifter_param = 22;
+    GRT::MFCC mfcc(options);
+
     GRT::GMM gmm(5, true, true, 0.5);
 
     pipeline.addFeatureExtractionModule(fft);

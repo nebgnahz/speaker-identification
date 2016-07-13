@@ -48,16 +48,36 @@ class TriFilterBanks {
 
 class MFCC : public FeatureExtraction {
   public:
-    MFCC(uint32_t sampleRate = -1, uint32_t FFTSize = -1,
-         double startFreq = -1, double endFreq = -1,
-         uint32_t numFilterbankChannel = -1,
-         uint32_t numCepstralCoeff = -1,
-         uint32_t lifterParam = -1);
+    struct Options {
+        uint32_t sample_rate;
+        uint32_t fft_size;
+        double start_freq;
+        double end_freq;
+        uint32_t num_tri_filter;
+        uint32_t num_cepstral_coeff;
+        uint32_t lifter_param;
+        Options() : sample_rate(0), fft_size(0), start_freq(-1), end_freq(-1),
+                    num_tri_filter(0), num_cepstral_coeff(0), lifter_param(0) {}
+
+        bool operator==(const Options& rhs) {
+            return this->sample_rate == rhs.sample_rate &&
+                    this->fft_size == rhs.fft_size &&
+                    this->start_freq == rhs.start_freq &&
+                    this->end_freq == rhs.end_freq &&
+                    this->num_tri_filter == rhs.num_tri_filter &&
+                    this->num_cepstral_coeff == rhs.num_cepstral_coeff &&
+                    this->lifter_param == rhs.lifter_param;
+        }
+    };
+
+    MFCC(struct Options options = Options::Options());
 
     MFCC(const MFCC &rhs);
     MFCC& operator=(const MFCC &rhs);
     bool deepCopyFrom(const FeatureExtraction *featureExtraction) override;
     ~MFCC() {}
+
+    void initialize();
 
     virtual bool computeFeatures(const VectorDouble &inputVector) override;
     virtual bool reset() override;
@@ -67,6 +87,9 @@ class MFCC : public FeatureExtraction {
     using MLBase::predict;
     using MLBase::predict_;
 
+    struct Options getOptions() const {
+        return options_;
+    }
     TriFilterBanks getFilters() const {
         return filters_;
     }
@@ -78,9 +101,12 @@ class MFCC : public FeatureExtraction {
 
   protected:
     bool initialized_;
-    uint32_t num_tri_filter_;
-    uint32_t num_cc_;
-    uint32_t lifter_param_;
+
+    Options options_;
+
+    // The information below can be generated with options_. We fill them during
+    // the initialize() function.
+    double* cc_matrix_;
 
     TriFilterBanks filters_;
 

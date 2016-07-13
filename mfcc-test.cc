@@ -40,8 +40,6 @@ using std::vector;
 vector<string> split(string str, char delimiter);
 GRT::MatrixDouble readCSVToMatrix(const string&, uint32_t, uint32_t);
 
-using GRT::MFCC;
-
 int main(int argc, const char* argv[]) {
     if (argc < 2) {
         std::cerr << "USAGE: " << std::endl;
@@ -68,7 +66,15 @@ int main(int argc, const char* argv[]) {
 
     for (uint32_t iter = 0; iter < iters; iter++) {
 
-    MFCC mfcc(kSampleRate, kFFTSize, kStartFreq, kEndFreq, kNumFilterBank, kNumCC, kLifterParam);
+    GRT::MFCC::Options options;
+    options.sample_rate = kSampleRate;
+    options.fft_size = kFFTSize;
+    options.start_freq = kStartFreq;
+    options.end_freq = kEndFreq;
+    options.num_tri_filter = kNumFilterBank;
+    options.num_cepstral_coeff = kNumCC;
+    options.lifter_param = kLifterParam;
+    GRT::MFCC mfcc(options);
 
     // Iterate each frame and compare the result
     for (uint32_t col = 0; col < kFrameCount; col++) {

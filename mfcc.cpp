@@ -57,15 +57,7 @@ void TriFilterBanks::filter(const vector<double>& input, vector<double>& output)
 }
 
 
-MFCC::MFCC(uint32_t sampleRate, uint32_t FFTSize,
-           double startFreq, double endFreq,
-           uint32_t numFilterbankChannel,
-           uint32_t numCepstralCoeff,
-           uint32_t lifterParam)
-        : initialized_(false),
-          num_tri_filter_(numFilterbankChannel),
-          num_cc_(numCepstralCoeff),
-          lifter_param_(lifterParam) {
+MFCC::MFCC(Options options) : initialized_(false), options_(options) {
     classType = "MFCC";
     featureExtractionType = classType;
     debugLog.setProceedingText("[INFO MFCC]");
@@ -73,27 +65,31 @@ MFCC::MFCC(uint32_t sampleRate, uint32_t FFTSize,
     errorLog.setProceedingText("[ERROR MFCC]");
     warningLog.setProceedingText("[WARNING MFCC]");
 
-    if (sampleRate <= 0 || FFTSize <= 0 || startFreq <= 0 || endFreq <= 0 ||
-        numFilterbankChannel <= 0 || numCepstralCoeff <= 0 || lifterParam <= 0) {
+    if (options == Options::Options()) { // Default values
         return;
     }
 
-    numInputDimensions = FFTSize;
-    numOutputDimensions = numCepstralCoeff;
+    initialize();
+}
 
-    filters_.initialize(numFilterbankChannel, FFTSize);
+void MFCC::initialize() {
+    numInputDimensions = options_.fft_size;
+    numOutputDimensions = options_.num_cepstral_coeff;
 
-    vector<double> freqs(numFilterbankChannel + 2);
-    double mel_start = TriFilterBanks::toMelScale(startFreq);
-    double mel_end = TriFilterBanks::toMelScale(endFreq);
-    double mel_step = (mel_end - mel_start) / (numFilterbankChannel + 1);
+    filters_.initialize(options_.num_tri_filter, options_.fft_size);
 
-    for (uint32_t i = 0; i < numFilterbankChannel + 2; i++) {
+    vector<double> freqs(options_.num_tri_filter + 2);
+    double mel_start = TriFilterBanks::toMelScale(options_.start_freq);
+    double mel_end = TriFilterBanks::toMelScale(options_.end_freq);
+    double mel_step = (mel_end - mel_start) / (options_.num_tri_filter + 1);
+
+    for (uint32_t i = 0; i < options_.num_tri_filter + 2; i++) {
         freqs[i] = TriFilterBanks::fromMelScale(mel_start + i * mel_step);
     }
 
-    for (uint32_t i = 0; i < numFilterbankChannel; i++) {
-        filters_.setFilter(i, freqs[i], freqs[i + 1], freqs[i + 2], sampleRate);
+    for (uint32_t i = 0; i < options_.num_tri_filter; i++) {
+        filters_.setFilter(i, freqs[i], freqs[i + 1], freqs[i + 2],
+                           options_.sample_rate);
     }
 
     initialized_ = true;
@@ -106,17 +102,14 @@ MFCC::MFCC(const MFCC &rhs) {
     errorLog.setProceedingText("[ERROR MFCC]");
     warningLog.setProceedingText("[WARNING MFCC]");
 
-    this->num_cc_ = rhs.num_cc_;
-    this->lifter_param_ = rhs.lifter_param_;
+    this->options_ = rhs.options_;
     *this = rhs;
 }
 
 MFCC& MFCC::operator=(const MFCC &rhs) {
     if (this != &rhs) {
         this->classType = rhs.getClassType();
-        this->filters_ = rhs.getFilters();
-        this->num_cc_ = rhs.num_cc_;
-        this->lifter_param_ = rhs.lifter_param_;
+        this->options_ = rhs.getOptions();
         copyBaseVariables( (FeatureExtraction*)&rhs );
     }
     return *this;
@@ -139,10 +132,10 @@ bool MFCC::deepCopyFrom(const FeatureExtraction *featureExtraction) {
 }
 
 void MFCC::computeLFBE(const vector<double>& fft, vector<double>& lfbe) {
-    assert(lfbe.size() == num_tri_filter_
+    assert(lfbe.size() == options_.num_tri_filter
            && "Dimension mismatch for LFBE computation");
 
-    uint32_t M = num_tri_filter_;
+    uint32_t M = options_.num_tri_filter;
     filters_.filter(fft, lfbe);
 
     for (uint32_t i = 0; i < M; i++) {
@@ -153,10 +146,10 @@ void MFCC::computeLFBE(const vector<double>& fft, vector<double>& lfbe) {
 }
 
 vector<double> MFCC::getCC(const vector<double>& lfbe) {
-    uint32_t M = num_tri_filter_;
+    uint32_t M = options_.num_tri_filter;
 
-    vector<double> cc(num_cc_);
-    for (uint32_t i = 0; i < num_cc_; i++) {
+    vector<double> cc(options_.num_cepstral_coeff);
+    for (uint32_t i = 0; i < options_.num_cepstral_coeff; i++) {
         for (uint32_t j = 0; j < M; j++) {
             // [1] j is 1:M not 0:(M-1), so we change (j - 0.5) to (j + 0.5)
             cc[i] += sqrt(2.0 / M) * lfbe[j] * cos(PI * i / M * (j + 0.5));
@@ -166,9 +159,9 @@ vector<double> MFCC::getCC(const vector<double>& lfbe) {
 }
 
 vector<double> MFCC::lifterCC(const vector<double>& cc) {
-    vector<double> liftered(num_cc_);
-    uint32_t L = lifter_param_;
-    for (uint32_t i = 0; i < num_cc_; i++) {
+    vector<double> liftered(options_.num_cepstral_coeff);
+    uint32_t L = options_.lifter_param;
+    for (uint32_t i = 0; i < options_.num_cepstral_coeff; i++) {
         liftered[i] = (1 + 1.0f * L / 2 * sin(PI * i / L)) * cc[i];
     }
     return liftered;
@@ -177,7 +170,7 @@ vector<double> MFCC::lifterCC(const vector<double>& cc) {
 bool MFCC::computeFeatures(const VectorDouble &inputVector) {
     // We assume the input is from a DFT (FFT) transformation.
     vector<double> intermediate;
-    intermediate.reserve(num_tri_filter_);
+    intermediate.reserve(options_.num_tri_filter);
     computeLFBE(inputVector, intermediate);
 
     VectorDouble cc = getCC(intermediate);
