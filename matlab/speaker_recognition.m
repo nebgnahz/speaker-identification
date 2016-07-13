@@ -10,8 +10,8 @@ L = 22;
 LF = 300;
 HF = 3700;
 
-NC = 16; % num classes
-N = 8;
+NC = 32; % num classes
+N = 12;
 
 MFCCs1 = [];
 for i = 1:N
@@ -59,7 +59,8 @@ p = [pdf(GMModel1, MFCCt), pdf(GMModel2, MFCCt)];  % P(x|model_i)
 [~, cIdx] = max(p,[],2);                           % argmax_i P(x|model_i)
 
 figure
-plot(cIdx)
-axis([0, size(cIdx, 1), 0, 3])
-figure
-plot(speech)
+step = fs * Ts / 1000;
+plot(1:step:step*size(cIdx, 1), cIdx)
+axis([0, step * size(cIdx, 1), -1, 3])
+hold on
+plot(speech + 1.5)

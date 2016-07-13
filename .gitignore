@@ -1,5 +1,9 @@
 # Ignore the final binary
-mfcc
+cblas-test
+mfcc-test
+speaker-recognition
+*.dSYM/
+callgrind*
 
 # Compiled Object files
 *.slo
