@@ -58,11 +58,11 @@ int main(int argc, char* argv[]) {
     options.start_freq = 300;
     options.end_freq = 8000;
     options.num_tri_filter = 26;
-    options.num_cepstral_coeff = 5;
+    options.num_cepstral_coeff = 12;
     options.lifter_param = 22;
     GRT::MFCC mfcc(options);
 
-    GRT::GMM gmm(5, true, true, 0.5);
+    GRT::GMM gmm(10, true, false, 1, 100, 0.001);
 
     pipeline.addFeatureExtractionModule(fft);
     pipeline.addFeatureExtractionModule(mfcc);
@@ -73,15 +73,23 @@ int main(int argc, char* argv[]) {
     load_audio_file_from_directory(data, kMaleDatasetDir, 2, 5);
     std::cout << data.getStatsAsString() << std::endl;
 
-    pipeline.train(data);
+    if (argc == 1) {
+        pipeline.train(data);
+        pipeline.getClassifier()->save("classifier.grt");
+    } else if (argc == 2) {
+        pipeline.getClassifier()->load(argv[1]);
+    }
 
     GRT::TimeSeriesClassificationData test_data(1);
     load_audio_file_from_directory(test_data, kFemaleDatasetDir, 1, 1, 40);
 
     GRT::MatrixDouble test_samples = test_data.getDataAsMatrixDouble();
-    vector<uint32_t> classified_result(2, 0);
+    vector<uint32_t> classified_result(3, 0);
     for (uint32_t i = 0; i < test_samples.getNumRows(); i++) {
-        classified_result[pipeline.predict(test_samples.getRowVector(i))]++;
+        pipeline.predict(test_samples.getRowVector(i));
+        uint32_t label = pipeline.getPredictedClassLabel();
+        // std::cout << test_samples.getRowVector(i)[0] << " " << label << std::endl;
+        classified_result[label]++;
     }
 
     for (const auto& i : classified_result) {
