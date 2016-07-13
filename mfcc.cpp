@@ -76,6 +76,9 @@ void MFCC::initialize() {
     numInputDimensions = options_.fft_size;
     numOutputDimensions = options_.num_cepstral_coeff;
 
+    //---------------------------------------------
+    //  Prepare the tribank filter
+    //---------------------------------------------
     filters_.initialize(options_.num_tri_filter, options_.fft_size);
 
     vector<double> freqs(options_.num_tri_filter + 2);
@@ -91,6 +94,28 @@ void MFCC::initialize() {
         filters_.setFilter(i, freqs[i], freqs[i + 1], freqs[i + 2],
                            options_.sample_rate);
     }
+
+    //--------------------------------------------------------------------------
+    //  Prepare the dct matrix
+    //
+    //   [ num_cepstral_coeff rows * options_.num_tri_filter columns ]
+    //
+    //--------------------------------------------------------------------------
+    uint32_t row = options_.num_cepstral_coeff;
+    uint32_t col = options_.num_tri_filter;
+    dct_matrix_ = new double[row * col];
+    for (uint32_t i = 0; i < row; i++) {
+        for (uint32_t j = 0; j < col; j++) {
+            // In the matlab reference implementation, it's using (j - 0.5),
+            // that's because j is 1:M not 0:(M-1). In C++, we use (j + 0.5).
+            dct_matrix_[i * col + j] =
+                    sqrt(2.0 / col) * cos(PI * i / col * (j + 0.5));
+        }
+    }
+
+    // Vector allocation
+    tmp_lfbe_.resize(options_.num_tri_filter);
+    tmp_cc_.resize(options_.num_cepstral_coeff);
 
     initialized_ = true;
 }
@@ -110,6 +135,7 @@ MFCC& MFCC::operator=(const MFCC &rhs) {
     if (this != &rhs) {
         this->classType = rhs.getClassType();
         this->options_ = rhs.getOptions();
+        this->initialize();
         copyBaseVariables( (FeatureExtraction*)&rhs );
     }
     return *this;
@@ -145,6 +171,13 @@ void MFCC::computeLFBE(const vector<double>& fft, vector<double>& lfbe) {
     }
 }
 
+void MFCC::computeCC(const vector<double>& lfbe, vector<double>& cc) {
+    cblas_dgemv(CblasRowMajor, CblasNoTrans,
+                options_.num_cepstral_coeff, options_.num_tri_filter,
+                1.0, dct_matrix_, options_.num_tri_filter, lfbe.data(), 1,
+                1.0, cc.data(), 1);
+}
+
 vector<double> MFCC::getCC(const vector<double>& lfbe) {
     uint32_t M = options_.num_tri_filter;
 
@@ -168,15 +201,15 @@ vector<double> MFCC::lifterCC(const vector<double>& cc) {
 }
 
 bool MFCC::computeFeatures(const VectorDouble &inputVector) {
+    // Clear the memory (if not, garbage memory will cause us issue. This should
+    // be faster than allocating a vector every time (maybe?)
+    std::fill(tmp_lfbe_.begin(), tmp_lfbe_.end(), 0);
+    std::fill(tmp_cc_.begin(), tmp_cc_.end(), 0);
+
     // We assume the input is from a DFT (FFT) transformation.
-    vector<double> intermediate;
-    intermediate.reserve(options_.num_tri_filter);
-    computeLFBE(inputVector, intermediate);
-
-    VectorDouble cc = getCC(intermediate);
-    VectorDouble liftered = lifterCC(cc);
-    featureVector = liftered;
-
+    computeLFBE(inputVector, tmp_lfbe_);
+    computeCC(tmp_lfbe_, tmp_cc_);
+    featureVector = lifterCC(tmp_cc_);
     featureDataReady = true;
     return true;
 }

@@ -1,6 +1,6 @@
 all: speaker-recognition mfcc-test cblas-test
 
-CFLAGS=-I. -std=c++11
+CFLAGS=-I. -std=c++11 -O3
 LIBSNDFILE=`pkg-config --cflags --libs sndfile`
 GRT_INC=`pkg-config --cflags grt`
 GRT_LIB=`pkg-config --libs grt`

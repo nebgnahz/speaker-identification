@@ -69,22 +69,22 @@ int main(int argc, char* argv[]) {
     pipeline.setClassifier(gmm);
 
     GRT::TimeSeriesClassificationData data(1);
-    load_audio_file_from_directory(data, kFemaleDatasetDir, 1, 1);
-    load_audio_file_from_directory(data, kMaleDatasetDir, 2, 1);
+    load_audio_file_from_directory(data, kFemaleDatasetDir, 1, 5);
+    load_audio_file_from_directory(data, kMaleDatasetDir, 2, 5);
     std::cout << data.getStatsAsString() << std::endl;
 
     pipeline.train(data);
 
-    // GRT::TimeSeriesClassificationData test_data(1);
-    // load_audio_file_from_directory(test_data, kFemaleDatasetDir, 1, 1, 30);
+    GRT::TimeSeriesClassificationData test_data(1);
+    load_audio_file_from_directory(test_data, kFemaleDatasetDir, 1, 1, 40);
 
-    // GRT::MatrixDouble test_samples = test_data.getDataAsMatrixDouble();
-    // vector<uint32_t> classified_result(2, 0);
-    // for (uint32_t i = 0; i < test_samples.getNumRows(); i++) {
-    //     classified_result[pipeline.predict(test_samples.getRowVector(i))]++;
-    // }
+    GRT::MatrixDouble test_samples = test_data.getDataAsMatrixDouble();
+    vector<uint32_t> classified_result(2, 0);
+    for (uint32_t i = 0; i < test_samples.getNumRows(); i++) {
+        classified_result[pipeline.predict(test_samples.getRowVector(i))]++;
+    }
 
-    // for (const auto& i : classified_result) {
-    //     std::cout << i << std::endl;
-    // }
+    for (const auto& i : classified_result) {
+        std::cout << i << std::endl;
+    }
 }

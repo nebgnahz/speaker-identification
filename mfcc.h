@@ -75,7 +75,7 @@ class MFCC : public FeatureExtraction {
     MFCC(const MFCC &rhs);
     MFCC& operator=(const MFCC &rhs);
     bool deepCopyFrom(const FeatureExtraction *featureExtraction) override;
-    ~MFCC() {}
+    ~MFCC() { delete[] dct_matrix_; }
 
     void initialize();
 
@@ -96,19 +96,21 @@ class MFCC : public FeatureExtraction {
 
   public:
     void computeLFBE(const vector<double>& fft, vector<double>& lfbe);
+    void computeCC(const vector<double>& lfbe, vector<double>& cc);
     vector<double> getCC(const vector<double>& lfbe);
     vector<double> lifterCC(const vector<double>& cc);
 
   protected:
     bool initialized_;
-
     Options options_;
 
     // The information below can be generated with options_. We fill them during
     // the initialize() function.
-    double* cc_matrix_;
-
+    double* dct_matrix_;
     TriFilterBanks filters_;
+
+    vector<double> tmp_lfbe_;
+    vector<double> tmp_cc_;
 
     static RegisterFeatureExtractionModule<MFCC> registerModule;
 };

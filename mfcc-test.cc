@@ -84,12 +84,12 @@ int main(int argc, const char* argv[]) {
         vector<double> fft_frame = fft.getColVector(col);
         vector<double> my_lfbe(kNumFilterBank);
         mfcc.computeLFBE(fft_frame, my_lfbe);
-
         vector<double> their_lfbe = fbe.getColVector(col);
         EXPECT_CLOSE_VEC(my_lfbe, their_lfbe, 0.01);
 
         // 2. LFBE -> CC
-        vector<double> my_cc = mfcc.getCC(their_lfbe);
+        vector<double> my_cc(kNumCC);
+        mfcc.computeCC(their_lfbe, my_cc);
         vector<double> their_cc = cc.getColVector(col);
         EXPECT_CLOSE_VEC(my_cc, their_cc, 0.01);
 
@@ -97,6 +97,10 @@ int main(int argc, const char* argv[]) {
         vector<double> my_liftered = mfcc.lifterCC(their_cc);
         vector<double> their_liftered = liftered.getColVector(col);
         EXPECT_CLOSE_VEC(my_liftered, their_liftered, 0.01);
+
+        // Finally, do an end-to-end check.
+        mfcc.computeFeatures(fft_frame);
+        EXPECT_CLOSE_VEC(mfcc.getFeatureVector(), their_liftered, 0.01);
     }
     }
 
