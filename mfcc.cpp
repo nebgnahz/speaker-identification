@@ -1,41 +1,59 @@
-#include "MFCC.h"
+#include "mfcc.h"
 
 #include <cmath>
+#include <new>
+
+#include <Accelerate/Accelerate.h>
 
 namespace GRT {
 
-RegisterFeatureExtractionModule<MFCC>
-MFCC::registerModule("MFCC");
+RegisterFeatureExtractionModule<MFCC> MFCC::registerModule("MFCC");
 
-TriFilterBank::TriFilterBank(double left, double middle, double right, uint32_t fs, uint32_t size) {
-    filter_.resize(size);
+TriFilterBanks::TriFilterBanks() :
+        initialized_(false) {
+}
+
+void TriFilterBanks::initialize(uint32_t num_filter, uint32_t filter_size) {
+    num_filter_ = num_filter;
+    filter_size_ = filter_size;
+    filter_ = new double[num_filter_ * filter_size_];
+    initialized_ = true;
+}
+
+void TriFilterBanks::setFilter(
+    uint32_t idx, double left, double middle, double right, uint32_t fs) {
+    uint32_t size = filter_size_;
     double unit = 1.0f * fs / 2 / (size - 1);
     for (uint32_t i = 0; i < size; i++) {
         double f = unit * i;
+        uint32_t ni = i + idx * filter_size_;
         if (f <= left) {
-            filter_[i] = 0;
+            filter_[ni] = 0;
         } else if (left < f && f <= middle) {
-            filter_[i] = 1.0f * (f - left) / (middle - left);
+            filter_[ni] = 1.0f * (f - left) / (middle - left);
         } else if (middle < f && f <= right) {
-            filter_[i] = 1.0f * (right - f) / (right - middle);
+            filter_[ni] = 1.0f * (right - f) / (right - middle);
         } else if (right < f) {
-            filter_[i] = 0;
+            filter_[ni] = 0;
         } else {
-            assert(false && "TriFilterBank argument wrong or implementation bug");
+            assert(false && "TriFilterBanks argument wrong or implementation bug");
         }
     }
 }
 
-double TriFilterBank::filter(vector<double> input) {
-    uint32_t filter_size = filter_.size();
-    assert(input.size() == filter_size
-           && "Dimension mismatch in TriFilterBank filter");
+TriFilterBanks::~TriFilterBanks() {
+    if (initialized_) { delete filter_; }
+}
 
-    double sum = 0;
-    for (uint32_t i = 0; i < filter_size; i++) {
-        sum += input[i] * filter_[i];
-    }
-    return sum;
+void TriFilterBanks::filter(const vector<double>& input, vector<double>& output) {
+    assert(input.size() == filter_size_
+           && "Dimension mismatch in TriFilterBanks filter");
+
+    // Perform matrix multiplication
+    cblas_dgemv(CblasRowMajor, CblasNoTrans,
+                num_filter_, filter_size_,
+                1.0, filter_, filter_size_, input.data(), 1,
+                1.0, output.data(), 1);
 }
 
 
@@ -62,21 +80,19 @@ MFCC::MFCC(uint32_t sampleRate, uint32_t FFTSize,
     numInputDimensions = FFTSize;
     numOutputDimensions = numCepstralCoeff;
 
+    filters_.initialize(numFilterbankChannel, FFTSize);
+
     vector<double> freqs(numFilterbankChannel + 2);
-    double mel_start = TriFilterBank::toMelScale(startFreq);
-    double mel_end = TriFilterBank::toMelScale(endFreq);
+    double mel_start = TriFilterBanks::toMelScale(startFreq);
+    double mel_end = TriFilterBanks::toMelScale(endFreq);
     double mel_step = (mel_end - mel_start) / (numFilterbankChannel + 1);
 
     for (uint32_t i = 0; i < numFilterbankChannel + 2; i++) {
-        freqs[i] = TriFilterBank::fromMelScale(mel_start + i * mel_step);
+        freqs[i] = TriFilterBanks::fromMelScale(mel_start + i * mel_step);
     }
 
     for (uint32_t i = 0; i < numFilterbankChannel; i++) {
-        filters_.push_back(TriFilterBank(freqs[i],
-                                         freqs[i + 1],
-                                         freqs[i + 2],
-                                         sampleRate,
-                                         FFTSize));
+        filters_.setFilter(i, freqs[i], freqs[i + 1], freqs[i + 2], sampleRate);
     }
 
     initialized_ = true;
@@ -89,7 +105,6 @@ MFCC::MFCC(const MFCC &rhs) {
     errorLog.setProceedingText("[ERROR MFCC]");
     warningLog.setProceedingText("[WARNING MFCC]");
 
-    this->filters_.clear();
     this->num_cc_ = rhs.num_cc_;
     this->lifter_param_ = rhs.lifter_param_;
     *this = rhs;
@@ -101,7 +116,6 @@ MFCC& MFCC::operator=(const MFCC &rhs) {
         this->filters_ = rhs.getFilters();
         this->num_cc_ = rhs.num_cc_;
         this->lifter_param_ = rhs.lifter_param_;
-        this->filters_ = rhs.getFilters();
         copyBaseVariables( (FeatureExtraction*)&rhs );
     }
     return *this;
@@ -124,22 +138,23 @@ bool MFCC::deepCopyFrom(const FeatureExtraction *featureExtraction) {
 }
 
 vector<double> MFCC::getLFBE(const vector<double>& fft) {
-    uint32_t M = filters_.size();
+    uint32_t M = filters_.getNumFilters();
     vector<double> lfbe(M);
+
+    filters_.filter(fft, lfbe);
+
     for (uint32_t i = 0; i < M; i++) {
-        double energy = filters_[i].filter(fft);
-        if (energy == 0) {
-            // Prevent log_energy goes to -inf...
-            lfbe[i] = 0;
-        } else {
-            lfbe[i] = log(energy);
+        if (lfbe[i] != 0) {
+            lfbe[i] = log(lfbe[i]);
         }
     }
+
     return lfbe;
 }
 
 vector<double> MFCC::getCC(const vector<double>& lfbe) {
-    uint32_t M = filters_.size();
+    uint32_t M = filters_.getNumFilters();
+
     vector<double> cc(num_cc_);
     for (uint32_t i = 0; i < num_cc_; i++) {
         for (uint32_t j = 0; j < M; j++) {
@@ -171,7 +186,6 @@ bool MFCC::computeFeatures(const VectorDouble &inputVector) {
 }
 
 bool MFCC::reset() {
-    if (initialized_) { filters_.clear(); }
     return true;
 }
 

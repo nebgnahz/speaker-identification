@@ -1,5 +1,5 @@
 #include <dirent.h>
-#include <GRT/GRT.h>
+#include <GRT.h>
 #include <iostream>
 #include <limits>
 
