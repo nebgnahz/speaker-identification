@@ -21,7 +21,7 @@ cblas-test: cblas-test.cpp
 	$(CXX) $^ -o cblas-test -framework Accelerate
 
 test: mfcc-test
-	@./mfcc-test test
+	@time ./mfcc-test test 100
 
 clean:
 	$(RM) mfcc-test speaker-recognition *.o

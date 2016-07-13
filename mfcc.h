@@ -17,8 +17,6 @@ namespace GRT {
 //   [   ...........   ]      fft
 //   [   ...........   ]
 //   [  filter bank N  ]     |____|
-
-
 class TriFilterBanks {
   public:
     TriFilterBanks();
@@ -74,12 +72,13 @@ class MFCC : public FeatureExtraction {
     }
 
   public:
-    vector<double> getLFBE(const vector<double>& fft);
+    void computeLFBE(const vector<double>& fft, vector<double>& lfbe);
     vector<double> getCC(const vector<double>& lfbe);
     vector<double> lifterCC(const vector<double>& cc);
 
   protected:
     bool initialized_;
+    uint32_t num_tri_filter_;
     uint32_t num_cc_;
     uint32_t lifter_param_;
 

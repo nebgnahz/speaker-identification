@@ -63,6 +63,7 @@ MFCC::MFCC(uint32_t sampleRate, uint32_t FFTSize,
            uint32_t numCepstralCoeff,
            uint32_t lifterParam)
         : initialized_(false),
+          num_tri_filter_(numFilterbankChannel),
           num_cc_(numCepstralCoeff),
           lifter_param_(lifterParam) {
     classType = "MFCC";
@@ -137,10 +138,11 @@ bool MFCC::deepCopyFrom(const FeatureExtraction *featureExtraction) {
     return false;
 }
 
-vector<double> MFCC::getLFBE(const vector<double>& fft) {
-    uint32_t M = filters_.getNumFilters();
-    vector<double> lfbe(M);
+void MFCC::computeLFBE(const vector<double>& fft, vector<double>& lfbe) {
+    assert(lfbe.size() == num_tri_filter_
+           && "Dimension mismatch for LFBE computation");
 
+    uint32_t M = num_tri_filter_;
     filters_.filter(fft, lfbe);
 
     for (uint32_t i = 0; i < M; i++) {
@@ -148,12 +150,10 @@ vector<double> MFCC::getLFBE(const vector<double>& fft) {
             lfbe[i] = log(lfbe[i]);
         }
     }
-
-    return lfbe;
 }
 
 vector<double> MFCC::getCC(const vector<double>& lfbe) {
-    uint32_t M = filters_.getNumFilters();
+    uint32_t M = num_tri_filter_;
 
     vector<double> cc(num_cc_);
     for (uint32_t i = 0; i < num_cc_; i++) {
@@ -176,8 +176,11 @@ vector<double> MFCC::lifterCC(const vector<double>& cc) {
 
 bool MFCC::computeFeatures(const VectorDouble &inputVector) {
     // We assume the input is from a DFT (FFT) transformation.
-    VectorDouble lfbe = getLFBE(inputVector);
-    VectorDouble cc = getCC(lfbe);
+    vector<double> intermediate;
+    intermediate.reserve(num_tri_filter_);
+    computeLFBE(inputVector, intermediate);
+
+    VectorDouble cc = getCC(intermediate);
     VectorDouble liftered = lifterCC(cc);
     featureVector = liftered;
 

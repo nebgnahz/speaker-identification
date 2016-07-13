@@ -1,5 +1,6 @@
 #include <assert.h>
 
+#include <cstdio>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -42,17 +43,30 @@ GRT::MatrixDouble readCSVToMatrix(const string&, uint32_t, uint32_t);
 using GRT::MFCC;
 
 int main(int argc, const char* argv[]) {
-    if (argc != 2) {
+    if (argc < 2) {
         std::cerr << "USAGE: " << std::endl;
-        std::cerr << "  " << argv[0] << " <data directory>" << std::endl;
+        std::cerr << "  " << argv[0] << " <data directory> <iteration>"
+                  << std::endl;
         exit(1);
     }
 
     std::string dir = argv[1];
+
+    uint32_t iters = 1;
+
+    if (argc == 3) {
+        if (sscanf(argv[2], "%ud", &iters) != 1 || iters == 0) {
+            std::cerr<< "iteration is not a positive integer" << std::endl;
+            exit(1);
+        }
+    }
+
     GRT::MatrixDouble fft = readCSVToMatrix(dir + "/2.fft.csv", kFFTSize, kFrameCount);
     GRT::MatrixDouble fbe = readCSVToMatrix(dir + "/3.lfbe.csv", kNumFilterBank, kFrameCount);
     GRT::MatrixDouble cc = readCSVToMatrix(dir + "/4.cc.csv", kNumCC, kFrameCount);
     GRT::MatrixDouble liftered = readCSVToMatrix(dir + "/5.liftered.csv", kNumCC, kFrameCount);
+
+    for (uint32_t iter = 0; iter < iters; iter++) {
 
     MFCC mfcc(kSampleRate, kFFTSize, kStartFreq, kEndFreq, kNumFilterBank, kNumCC, kLifterParam);
 
@@ -62,7 +76,9 @@ int main(int argc, const char* argv[]) {
 
         // 1. FFT -> LFBE
         vector<double> fft_frame = fft.getColVector(col);
-        vector<double> my_lfbe = mfcc.getLFBE(fft_frame);
+        vector<double> my_lfbe(kNumFilterBank);
+        mfcc.computeLFBE(fft_frame, my_lfbe);
+
         vector<double> their_lfbe = fbe.getColVector(col);
         EXPECT_CLOSE_VEC(my_lfbe, their_lfbe, 0.01);
 
@@ -75,6 +91,7 @@ int main(int argc, const char* argv[]) {
         vector<double> my_liftered = mfcc.lifterCC(their_cc);
         vector<double> their_liftered = liftered.getColVector(col);
         EXPECT_CLOSE_VEC(my_liftered, their_liftered, 0.01);
+    }
     }
 
     // If we reach here, declare success
