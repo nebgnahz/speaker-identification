@@ -1,7 +1,7 @@
 #ifndef ESP_MFCC_H_
 #define ESP_MFCC_H_
 
-#include "GRT/CoreModules/FeatureExtraction.h"
+#include "CoreModules/FeatureExtraction.h"
 
 #include <stdint.h>
 #include <math.h>
@@ -9,9 +9,23 @@
 
 namespace GRT {
 
-class TriFilterBank {
+// TriFilterBanks contains the matrix that would perform the filter operation.
+// Specifically, the multiplication will take the following form:
+//
+//   [  filter bank 1  ]     |----|
+//   [  filter bank 2  ]
+//   [   ...........   ]      fft
+//   [   ...........   ]
+//   [  filter bank N  ]     |____|
+
+
+class TriFilterBanks {
   public:
-    TriFilterBank(double left, double middle, double right, uint32_t fs, uint32_t size);
+    TriFilterBanks();
+    ~TriFilterBanks();
+
+    void initialize(uint32_t num_filter, uint32_t filter_size);
+    void setFilter(uint32_t i, double left, double middle, double right, uint32_t fs);
 
     static inline double toMelScale(double freq) {
         return 1127.0f * log(1.0f + freq / 700.0f);
@@ -21,12 +35,17 @@ class TriFilterBank {
         return 700.0f * (exp(mel_freq / 1127.0f) - 1.0f);
     }
 
-    inline vector<double>& getFilter() { return filter_;  }
+    inline uint32_t getNumFilters() const {
+        return num_filter_;
+    }
 
-    double filter(vector<double> input);
+    void filter(const vector<double>& input, vector<double>& output);
 
   private:
-    vector<double> filter_;
+    bool initialized_;
+    double* filter_;
+    uint32_t num_filter_;
+    uint32_t filter_size_;
 };
 
 class MFCC : public FeatureExtraction {
@@ -50,7 +69,7 @@ class MFCC : public FeatureExtraction {
     using MLBase::predict;
     using MLBase::predict_;
 
-    vector<TriFilterBank> getFilters() const {
+    TriFilterBanks getFilters() const {
         return filters_;
     }
 
@@ -64,7 +83,7 @@ class MFCC : public FeatureExtraction {
     uint32_t num_cc_;
     uint32_t lifter_param_;
 
-    vector<TriFilterBank> filters_;
+    TriFilterBanks filters_;
 
     static RegisterFeatureExtractionModule<MFCC> registerModule;
 };

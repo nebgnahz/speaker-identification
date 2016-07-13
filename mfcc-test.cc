@@ -5,7 +5,7 @@
 #include <string>
 
 #include "mfcc.h"
-#include "GRT/GRT.h"
+#include "GRT.h"
 
 const uint32_t kAudioSampleNum = 42741;
 const uint32_t kSampleRate = 16000;
@@ -55,8 +55,6 @@ int main(int argc, const char* argv[]) {
     GRT::MatrixDouble liftered = readCSVToMatrix(dir + "/5.liftered.csv", kNumCC, kFrameCount);
 
     MFCC mfcc(kSampleRate, kFFTSize, kStartFreq, kEndFreq, kNumFilterBank, kNumCC, kLifterParam);
-
-    assert(mfcc.getFilters().size() == kNumFilterBank);
 
     // Iterate each frame and compare the result
     for (uint32_t col = 0; col < kFrameCount; col++) {
