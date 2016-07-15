@@ -1,7 +1,10 @@
 #include "mfcc.h"
 
+#include <algorithm>
 #include <cmath>
 #include <new>
+#include <numeric>
+#include <vector>
 
 #include <Accelerate/Accelerate.h>
 
@@ -201,6 +204,18 @@ vector<double> MFCC::lifterCC(const vector<double>& cc) {
 }
 
 bool MFCC::computeFeatures(const VectorDouble &inputVector) {
+    // The assumed input data is FFT value. We check VAD, if too small (somewhat
+    // meaning it's background noise), we return true (data has been processed)
+    // but set `featureDataReady` as false. Here it's a super naive VAD: the
+    // voice amplitude, or the FFT energy.
+    if (options_.use_vad) {
+        double sum = std::accumulate(inputVector.begin(), inputVector.end(), 0.0);
+        if (sum < options_.noise_level) {
+            featureDataReady = false;
+            return true;
+        }
+    }
+
     // Clear the memory (if not, garbage memory will cause us issue. This should
     // be faster than allocating a vector every time (maybe?)
     std::fill(tmp_lfbe_.begin(), tmp_lfbe_.end(), 0);

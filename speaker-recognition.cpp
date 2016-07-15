@@ -58,8 +58,10 @@ int main(int argc, char* argv[]) {
     options.start_freq = 300;
     options.end_freq = 8000;
     options.num_tri_filter = 26;
-    options.num_cepstral_coeff = 12;
+    options.num_cepstral_coeff = 8;
     options.lifter_param = 22;
+    options.use_vad = true;
+    options.noise_level = 30;
     GRT::MFCC mfcc(options);
 
     GRT::GMM gmm(10, true, false, 1, 100, 0.001);
@@ -86,13 +88,12 @@ int main(int argc, char* argv[]) {
     GRT::MatrixDouble test_samples = test_data.getDataAsMatrixDouble();
     vector<uint32_t> classified_result(3, 0);
     for (uint32_t i = 0; i < test_samples.getNumRows(); i++) {
-        pipeline.predict(test_samples.getRowVector(i));
+        uint32_t k = pipeline.predict(test_samples.getRowVector(i));
         uint32_t label = pipeline.getPredictedClassLabel();
         // std::cout << test_samples.getRowVector(i)[0] << " " << label << std::endl;
         classified_result[label]++;
     }
 
-    for (const auto& i : classified_result) {
-        std::cout << i << std::endl;
-    }
+    std::cout << "Female: " << classified_result[1] << std::endl;
+    std::cout << "Male  : " << classified_result[2] << std::endl;
 }
