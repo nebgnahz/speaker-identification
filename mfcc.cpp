@@ -16,8 +16,7 @@ namespace GRT {
 
 RegisterFeatureExtractionModule<MFCC> MFCC::registerModule("MFCC");
 
-TriFilterBanks::TriFilterBanks() :
-        initialized_(false) {
+TriFilterBanks::TriFilterBanks() : initialized_(false) {
 }
 
 void TriFilterBanks::initialize(uint32_t num_filter, uint32_t filter_size) {
@@ -27,8 +26,8 @@ void TriFilterBanks::initialize(uint32_t num_filter, uint32_t filter_size) {
     initialized_ = true;
 }
 
-void TriFilterBanks::setFilter(
-    uint32_t idx, double left, double middle, double right, uint32_t fs) {
+void TriFilterBanks::setFilter(uint32_t idx, double left, double middle,
+                               double right, uint32_t fs) {
     uint32_t size = filter_size_;
     double unit = 1.0f * fs / 2 / (size - 1);
     for (uint32_t i = 0; i < size; i++) {
@@ -43,26 +42,27 @@ void TriFilterBanks::setFilter(
         } else if (right < f) {
             filter_[ni] = 0;
         } else {
-            assert(false && "TriFilterBanks argument wrong or implementation bug");
+            assert(false &&
+                   "TriFilterBanks argument wrong or implementation bug");
         }
     }
 }
 
 TriFilterBanks::~TriFilterBanks() {
-    if (initialized_) { delete filter_; }
+    if (initialized_) {
+        delete filter_;
+    }
 }
 
-void TriFilterBanks::filter(const vector<double>& input, vector<double>& output) {
-    assert(input.size() == filter_size_
-           && "Dimension mismatch in TriFilterBanks filter");
+void TriFilterBanks::filter(const vector<double>& input,
+                            vector<double>& output) {
+    assert(input.size() == filter_size_ &&
+           "Dimension mismatch in TriFilterBanks filter");
 
     // Perform matrix multiplication
-    cblas_dgemv(CblasRowMajor, CblasNoTrans,
-                num_filter_, filter_size_,
-                1.0, filter_, filter_size_, input.data(), 1,
-                1.0, output.data(), 1);
+    cblas_dgemv(CblasRowMajor, CblasNoTrans, num_filter_, filter_size_, 1.0,
+                filter_, filter_size_, input.data(), 1, 1.0, output.data(), 1);
 }
-
 
 MFCC::MFCC(Options options) : initialized_(false), options_(options) {
     classType = "MFCC";
@@ -116,7 +116,7 @@ void MFCC::initialize() {
             // In the matlab reference implementation, it's using (j - 0.5),
             // that's because j is 1:M not 0:(M-1). In C++, we use (j + 0.5).
             dct_matrix_[i * col + j] =
-                    sqrt(2.0 / col) * cos(PI * i / col * (j + 0.5));
+                sqrt(2.0 / col) * cos(PI * i / col * (j + 0.5));
         }
     }
 
@@ -127,7 +127,7 @@ void MFCC::initialize() {
     initialized_ = true;
 }
 
-MFCC::MFCC(const MFCC &rhs) {
+MFCC::MFCC(const MFCC& rhs) {
     classType = rhs.getClassType();
     featureExtractionType = classType;
     debugLog.setProceedingText("[DEBUG MFCC]");
@@ -138,23 +138,23 @@ MFCC::MFCC(const MFCC &rhs) {
     *this = rhs;
 }
 
-MFCC& MFCC::operator=(const MFCC &rhs) {
+MFCC& MFCC::operator=(const MFCC& rhs) {
     if (this != &rhs) {
         this->classType = rhs.getClassType();
         this->options_ = rhs.getOptions();
         this->initialize();
-        copyBaseVariables( (FeatureExtraction*)&rhs );
+        copyBaseVariables((FeatureExtraction*)&rhs);
     }
     return *this;
 }
 
-bool MFCC::deepCopyFrom(const FeatureExtraction *featureExtraction) {
+bool MFCC::deepCopyFrom(const FeatureExtraction* featureExtraction) {
     if (featureExtraction == nullptr) {
         return false;
     }
 
     if (this->getFeatureExtractionType() ==
-        featureExtraction->getFeatureExtractionType() ){
+        featureExtraction->getFeatureExtractionType()) {
         // Invoke the equals operator to copy the data from the rhs instance to
         // this instance
         *this = *(MFCC*)featureExtraction;
@@ -162,14 +162,13 @@ bool MFCC::deepCopyFrom(const FeatureExtraction *featureExtraction) {
     }
 
     errorLog << "clone(MFCC *featureExtraction)"
-             << "-  FeatureExtraction Types Do Not Match!"
-             << endl;
+             << "-  FeatureExtraction Types Do Not Match!" << endl;
     return false;
 }
 
 void MFCC::computeLFBE(const vector<double>& fft, vector<double>& lfbe) {
-    assert(lfbe.size() == options_.num_tri_filter
-           && "Dimension mismatch for LFBE computation");
+    assert(lfbe.size() == options_.num_tri_filter &&
+           "Dimension mismatch for LFBE computation");
 
     uint32_t M = options_.num_tri_filter;
     filters_.filter(fft, lfbe);
@@ -182,10 +181,9 @@ void MFCC::computeLFBE(const vector<double>& fft, vector<double>& lfbe) {
 }
 
 void MFCC::computeCC(const vector<double>& lfbe, vector<double>& cc) {
-    cblas_dgemv(CblasRowMajor, CblasNoTrans,
-                options_.num_cepstral_coeff, options_.num_tri_filter,
-                1.0, dct_matrix_, options_.num_tri_filter, lfbe.data(), 1,
-                1.0, cc.data(), 1);
+    cblas_dgemv(CblasRowMajor, CblasNoTrans, options_.num_cepstral_coeff,
+                options_.num_tri_filter, 1.0, dct_matrix_,
+                options_.num_tri_filter, lfbe.data(), 1, 1.0, cc.data(), 1);
 }
 
 vector<double> MFCC::getCC(const vector<double>& lfbe) {
@@ -210,13 +208,14 @@ vector<double> MFCC::lifterCC(const vector<double>& cc) {
     return liftered;
 }
 
-bool MFCC::computeFeatures(const VectorDouble &inputVector) {
+bool MFCC::computeFeatures(const VectorDouble& inputVector) {
     // The assumed input data is FFT value. We check VAD, if too small (somewhat
     // meaning it's background noise), we return true (data has been processed)
     // but set `featureDataReady` as false. Here it's a super naive VAD: the
     // voice amplitude, or the FFT energy.
     if (options_.use_vad) {
-        double sum = std::accumulate(inputVector.begin(), inputVector.end(), 0.0);
+        double sum =
+            std::accumulate(inputVector.begin(), inputVector.end(), 0.0);
         if (sum < options_.noise_level) {
             featureDataReady = false;
             return true;

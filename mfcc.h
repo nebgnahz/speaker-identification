@@ -3,8 +3,8 @@
 
 #include "CoreModules/FeatureExtraction.h"
 
-#include <stdint.h>
 #include <math.h>
+#include <stdint.h>
 #include <vector>
 
 namespace GRT {
@@ -23,7 +23,8 @@ class TriFilterBanks {
     ~TriFilterBanks();
 
     void initialize(uint32_t num_filter, uint32_t filter_size);
-    void setFilter(uint32_t idx, double left, double middle, double right, uint32_t fs);
+    void setFilter(uint32_t idx, double left, double middle, double right,
+                   uint32_t fs);
 
     static inline double toMelScale(double freq) {
         return 1127.0f * log(1.0f + freq / 700.0f);
@@ -95,33 +96,37 @@ class MFCC : public FeatureExtraction {
         uint32_t lifter_param;       // Sinusoidal Lifter parameter
         bool use_vad;                // Voice Activity Detector
         double noise_level;          // Simple threshold for VAD
-        Options() : sample_rate(0), fft_size(0), start_freq(-1), end_freq(-1),
-                    num_tri_filter(0), num_cepstral_coeff(0), lifter_param(0),
-                    use_vad(false), noise_level(0) {}
+        Options()
+            : sample_rate(0), fft_size(0), start_freq(-1), end_freq(-1),
+              num_tri_filter(0), num_cepstral_coeff(0), lifter_param(0),
+              use_vad(false), noise_level(0) {
+        }
 
         bool operator==(const Options& rhs) {
             return this->sample_rate == rhs.sample_rate &&
-                    this->fft_size == rhs.fft_size &&
-                    this->start_freq == rhs.start_freq &&
-                    this->end_freq == rhs.end_freq &&
-                    this->num_tri_filter == rhs.num_tri_filter &&
-                    this->num_cepstral_coeff == rhs.num_cepstral_coeff &&
-                    this->lifter_param == rhs.lifter_param &&
-                    this->use_vad == rhs.use_vad &&
-                    this->noise_level == rhs.noise_level;
+                   this->fft_size == rhs.fft_size &&
+                   this->start_freq == rhs.start_freq &&
+                   this->end_freq == rhs.end_freq &&
+                   this->num_tri_filter == rhs.num_tri_filter &&
+                   this->num_cepstral_coeff == rhs.num_cepstral_coeff &&
+                   this->lifter_param == rhs.lifter_param &&
+                   this->use_vad == rhs.use_vad &&
+                   this->noise_level == rhs.noise_level;
         }
     };
 
     MFCC(struct Options options = Options());
 
-    MFCC(const MFCC &rhs);
-    MFCC& operator=(const MFCC &rhs);
-    bool deepCopyFrom(const FeatureExtraction *featureExtraction) override;
-    ~MFCC() override { delete[] dct_matrix_; }
+    MFCC(const MFCC& rhs);
+    MFCC& operator=(const MFCC& rhs);
+    bool deepCopyFrom(const FeatureExtraction* featureExtraction) override;
+    ~MFCC() override {
+        delete[] dct_matrix_;
+    }
 
     void initialize();
 
-    bool computeFeatures(const VectorDouble &inputVector) override;
+    bool computeFeatures(const VectorDouble& inputVector) override;
     bool reset() override;
 
     using MLBase::train;
@@ -157,6 +162,6 @@ class MFCC : public FeatureExtraction {
     static RegisterFeatureExtractionModule<MFCC> registerModule;
 };
 
-}  // namespace GRT
+} // namespace GRT
 
-#endif  // ESP_MFCC_H_
+#endif // ESP_MFCC_H_
