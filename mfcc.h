@@ -23,7 +23,7 @@ class TriFilterBanks {
     ~TriFilterBanks();
 
     void initialize(uint32_t num_filter, uint32_t filter_size);
-    void setFilter(uint32_t i, double left, double middle, double right, uint32_t fs);
+    void setFilter(uint32_t idx, double left, double middle, double right, uint32_t fs);
 
     static inline double toMelScale(double freq) {
         return 1127.0f * log(1.0f + freq / 700.0f);
@@ -112,17 +112,17 @@ class MFCC : public FeatureExtraction {
         }
     };
 
-    MFCC(struct Options options = Options::Options());
+    MFCC(struct Options options = Options());
 
     MFCC(const MFCC &rhs);
     MFCC& operator=(const MFCC &rhs);
     bool deepCopyFrom(const FeatureExtraction *featureExtraction) override;
-    ~MFCC() { delete[] dct_matrix_; }
+    ~MFCC() override { delete[] dct_matrix_; }
 
     void initialize();
 
-    virtual bool computeFeatures(const VectorDouble &inputVector) override;
-    virtual bool reset() override;
+    bool computeFeatures(const VectorDouble &inputVector) override;
+    bool reset() override;
 
     using MLBase::train;
     using MLBase::train_;

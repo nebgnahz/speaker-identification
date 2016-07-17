@@ -6,7 +6,11 @@
 #include <numeric>
 #include <vector>
 
+#if __APPLE__
 #include <Accelerate/Accelerate.h>
+#elif __linux__
+#include <cblas.h>
+#endif
 
 namespace GRT {
 
@@ -68,7 +72,7 @@ MFCC::MFCC(Options options) : initialized_(false), options_(options) {
     errorLog.setProceedingText("[ERROR MFCC]");
     warningLog.setProceedingText("[WARNING MFCC]");
 
-    if (options == Options::Options()) { // Default values
+    if (options == Options()) { // Default values
         return;
     }
 
@@ -145,7 +149,10 @@ MFCC& MFCC::operator=(const MFCC &rhs) {
 }
 
 bool MFCC::deepCopyFrom(const FeatureExtraction *featureExtraction) {
-    if (featureExtraction == NULL) return false;
+    if (featureExtraction == nullptr) {
+        return false;
+    }
+
     if (this->getFeatureExtractionType() ==
         featureExtraction->getFeatureExtractionType() ){
         // Invoke the equals operator to copy the data from the rhs instance to

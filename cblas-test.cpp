@@ -1,5 +1,10 @@
-#include <Accelerate/Accelerate.h>
 #include <stdio.h>
+
+#if __APPLE__
+#include <Accelerate/Accelerate.h>
+#elif __linux__
+#include <cblas.h>
+#endif
 
 // Calculate a * b
 float a[4][4] = {
