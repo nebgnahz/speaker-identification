@@ -248,7 +248,7 @@ bool MFCC::loadModelFromFile(string filename) {
     std::fstream file;
     file.open(filename.c_str(), std::ios::in);
 
-    return loadModelToFile(file);
+    return loadModelFromFile(file);
 }
 
 bool MFCC::saveModelToFile(fstream &file) const {
