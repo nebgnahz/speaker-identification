@@ -119,7 +119,7 @@ int main(int argc, char* argv[]) {
     GRT::MatrixDouble test_samples = test_data.getDataAsMatrixDouble();
     vector<uint32_t> classified_result(3, 0);
     for (uint32_t i = 0; i < test_samples.getNumRows(); i++) {
-        uint32_t k = pipeline.predict(test_samples.getRowVector(i));
+        pipeline.predict(test_samples.getRowVector(i));
         uint32_t label = pipeline.getPredictedClassLabel();
         // std::cout << test_samples.getRowVector(i)[0] << " " << label << std::endl;
         classified_result[label]++;

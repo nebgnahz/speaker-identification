@@ -8,10 +8,10 @@ ifeq ($(UNAME), Linux)
     BLAS_LIB=-lblas
 endif
 
-CFLAGS=-I. -std=c++11 -O2
+CFLAGS=-I. -std=c++11 -O2 -Wall -Wextra -pedantic -Werror
 SNDFILE_INC=`pkg-config --cflags sndfile`
 SNDFILE_LIB=`pkg-config --libs sndfile`
-GRT_INC=`pkg-config --cflags grt`
+GRT_INC=-isystem/usr/local/include/GRT
 GRT_LIB=`pkg-config --libs grt`
 
 mfcc.o: mfcc.cpp

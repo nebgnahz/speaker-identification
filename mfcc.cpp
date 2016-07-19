@@ -237,6 +237,159 @@ bool MFCC::computeFeatures(const VectorDouble& inputVector) {
     return true;
 }
 
+bool MFCC::saveModelToFile(string filename) const{
+    std::fstream file;
+    file.open(filename.c_str(), std::ios::out);
+
+    if (!saveModelToFile(file)) {
+        return false;
+    }
+
+    return true;
+}
+
+bool MFCC::loadModelFromFile(string filename) {
+    std::fstream file;
+    file.open(filename.c_str(), std::ios::in);
+
+    if (!loadModelFromFile(file)) {
+        return false;
+    }
+
+    return true;
+}
+
+bool MFCC::saveModelToFile(fstream &file) const {
+    if (!file.is_open()){
+        errorLog << "saveModelToFile(fstream &file) - The file is not open!" << endl;
+        return false;
+    }
+
+    // Write the file header
+    file << "GRT_FFT_FEATURES_FILE_V1.0" << endl;
+
+    // Save the base settings to the file
+    if (!saveFeatureExtractionSettingsToFile(file)) {
+        errorLog << "saveFeatureExtractionSettingsToFile(fstream &file)"
+                 << " - Failed to save base feature extraction settings to file!"
+                 << std::endl;
+        return false;
+    }
+
+    // Write the MFCC Options
+    file << "SampleRate: " << options_.sample_rate << std::endl;
+    file << "FFTSize: " << options_.fft_size << std::endl;
+    file << "StartFrequency: " << options_.start_freq << std::endl;
+    file << "EndFrequency: " << options_.end_freq << std::endl;
+    file << "NumTriFilter: " << options_.num_tri_filter << std::endl;
+    file << "LifterParam: " << options_.lifter_param << std::endl;
+    file << "UseVad: " << options_.use_vad << std::endl;
+    file << "NoiseLevel: " << options_.noise_level << std::endl;
+
+    return true;
+}
+
+bool MFCC::loadModelFromFile(fstream &file) {
+    if (!file.is_open()) {
+        errorLog << "loadModelFromFile(fstream &file) - The file is not open!"
+                 << std::endl;
+        return false;
+    }
+
+    string word;
+
+    // Load the header
+    file >> word;
+    if (word != "GRT_FFT_FEATURES_FILE_V1.0") {
+        errorLog << "loadModelFromFile(fstream &file) - Invalid file format!"
+                 << std::endl;
+        return false;
+    }
+
+    if (!loadFeatureExtractionSettingsFromFile(file)) {
+        errorLog << "loadFeatureExtractionSettingsFromFile(fstream &file) "
+                 << "- Failed to load base feature extraction settings from file!"
+                 << std::endl;
+        return false;
+    }
+
+    // Load the Sample Rate
+    file >> word;
+    if( word != "SampleRate:" ){
+        errorLog << "loadModelFromFile(fstream &file) "
+                 << "- Failed to read SampleRate header!" << std::endl;
+        return false;
+    }
+    file >> options_.sample_rate;;
+
+    // Load the FFT Size
+    file >> word;
+    if( word != "FFTSize:" ){
+        errorLog << "loadModelFromFile(fstream &file) "
+                 << "- Failed to read FFTSize header!" << std::endl;
+        return false;
+    }
+    file >> options_.fft_size;
+
+    // Load the Start Frequency
+    file >> word;
+    if( word != "StartFrequency:" ){
+        errorLog << "loadModelFromFile(fstream &file) "
+                 << "- Failed to read StartFrequency header!" << std::endl;
+        return false;
+    }
+    file >> options_.start_freq;
+
+    // Load the End Frequency
+    file >> word;
+    if( word != "EndFrequency:" ){
+        errorLog << "loadModelFromFile(fstream &file) "
+                 << "- Failed to read EndFrequency header!" << std::endl;
+        return false;
+    }
+    file >> options_.end_freq;
+
+    // Load the Num Tribank Filter
+    file >> word;
+    if( word != "NumTriFilter:" ){
+        errorLog << "loadModelFromFile(fstream &file) "
+                 << "- Failed to read NumTriFilter header!" << std::endl;
+        return false;
+    }
+    file >> options_.num_tri_filter;
+
+    // Load the Lifter Param
+    file >> word;
+    if( word != "LifterParam:" ){
+        errorLog << "loadModelFromFile(fstream &file) "
+                 << "- Failed to read LifterParam header!" << std::endl;
+        return false;
+    }
+    file >> options_.lifter_param;
+
+    // Load the Use VAD
+    file >> word;
+    if( word != "UseVad:" ){
+        errorLog << "loadModelFromFile(fstream &file) "
+                 << "- Failed to read UseVad header!" << std::endl;
+        return false;
+    }
+    file >> options_.use_vad;
+
+    // Load the Noise Level
+    file >> word;
+    if( word != "NoiseLevel:" ){
+        errorLog << "loadModelFromFile(fstream &file) "
+                 << "- Failed to read NoiseLevel header!" << std::endl;
+        return false;
+    }
+    file >> options_.use_vad;
+
+    initialize();
+    return true;
+}
+
+
 bool MFCC::reset() {
     return true;
 }

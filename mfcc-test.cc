@@ -8,7 +8,6 @@
 #include "mfcc.h"
 #include "GRT.h"
 
-const uint32_t kAudioSampleNum = 42741;
 const uint32_t kSampleRate = 16000;
 const uint32_t kFFTSize = 257;
 const uint32_t kFrameCount = 264;
@@ -79,8 +78,6 @@ int main(int argc, const char* argv[]) {
 
     // Iterate each frame and compare the result
     for (uint32_t col = 0; col < kFrameCount; col++) {
-        uint32_t M = kNumFilterBank;
-
         // 1. FFT -> LFBE
         vector<double> fft_frame = fft.getColVector(col);
         vector<double> my_lfbe(kNumFilterBank);

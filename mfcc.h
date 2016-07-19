@@ -131,10 +131,11 @@ class MFCC : public FeatureExtraction {
     bool computeFeatures(const VectorDouble& inputVector) override;
     bool reset() override;
 
-    using MLBase::train;
-    using MLBase::train_;
-    using MLBase::predict;
-    using MLBase::predict_;
+    // Save and Load from file
+    bool saveModelToFile(string filename) const override;
+    bool loadModelFromFile(string filename) override;
+    bool saveModelToFile(fstream &file) const override;
+    bool loadModelFromFile(fstream &file) override;
 
     struct Options getOptions() const {
         return options_;
