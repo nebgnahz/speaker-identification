@@ -241,22 +241,14 @@ bool MFCC::saveModelToFile(string filename) const{
     std::fstream file;
     file.open(filename.c_str(), std::ios::out);
 
-    if (!saveModelToFile(file)) {
-        return false;
-    }
-
-    return true;
+    return saveModelToFile(file);
 }
 
 bool MFCC::loadModelFromFile(string filename) {
     std::fstream file;
     file.open(filename.c_str(), std::ios::in);
 
-    if (!loadModelFromFile(file)) {
-        return false;
-    }
-
-    return true;
+    return loadModelToFile(file);
 }
 
 bool MFCC::saveModelToFile(fstream &file) const {
