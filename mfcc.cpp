@@ -14,6 +14,8 @@
 
 namespace GRT {
 
+using std::vector;
+
 RegisterFeatureExtractionModule<MFCC> MFCC::registerModule("MFCC");
 
 TriFilterBanks::TriFilterBanks() : initialized_(false) {
@@ -162,7 +164,7 @@ bool MFCC::deepCopyFrom(const FeatureExtraction* featureExtraction) {
     }
 
     errorLog << "clone(MFCC *featureExtraction)"
-             << "-  FeatureExtraction Types Do Not Match!" << endl;
+             << "-  FeatureExtraction Types Do Not Match!" << std::endl;
     return false;
 }
 

@@ -35,6 +35,7 @@ const uint32_t kEndFreq = 3700;
     }
 
 using std::vector;
+using std::string;
 
 // Forward declaration of util functions
 vector<string> split(string str, char delimiter);
@@ -100,7 +101,8 @@ int main(int argc, const char* argv[]) {
 
         // Finally, do an end-to-end check.
         mfcc.computeFeatures(fft_frame);
-        EXPECT_CLOSE_VEC(mfcc.getFeatureVector(), their_liftered, 0.01);
+        vector<double> features = mfcc.getFeatureVector();
+        EXPECT_CLOSE_VEC(features, their_liftered, 0.01);
     }
     }
 

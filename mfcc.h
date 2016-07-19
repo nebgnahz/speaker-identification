@@ -9,6 +9,8 @@
 
 namespace GRT {
 
+using std::vector;
+
 // TriFilterBanks contains the matrix that would perform the filter operation.
 // Specifically, the multiplication will take the following form:
 //

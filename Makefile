@@ -8,7 +8,7 @@ ifeq ($(UNAME), Linux)
     BLAS_LIB=-lblas
 endif
 
-CFLAGS=-I. -std=c++11 -g
+CFLAGS=-I. -std=c++11 -O2
 SNDFILE_INC=`pkg-config --cflags sndfile`
 SNDFILE_LIB=`pkg-config --libs sndfile`
 GRT_INC=`pkg-config --cflags grt`
