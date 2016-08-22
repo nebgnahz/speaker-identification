@@ -31,8 +31,9 @@ few number of speakers.
 
 This repository mainly contains the C++ implementation. However, during the
 research, it was easier to use Matlab to do data and algorithm exploration. You
-can check out the `matlab` folder and specifically the live script
-`speaker_recognition.mlx`.
+can check out the `matlab` folder and specifically the script
+`speaker_recognition.m`. It currently uses data that's exported from GRT. It wouldn't
+be too hard to simply use audio files (you may check out the MOCHA-TIMIT dataset).
 
 # Dataset
 
